@@ -283,26 +283,39 @@ ORDER BY a.City, type_adjusted_delta DESC;
    7) BHK Spectrum Coverage (how wide each city’s BHK menu is)
    Purpose: measure textual and numeric variety in BHK offerings
 --------------------------------------------------------------------------- */
-WITH bhk_extracted AS (
-  SELECT
-    City,
-    BHK_Type,
-    NULLIF(CAST(REGEXP_REPLACE(BHK_Type, '[^0-9]', '') AS UNSIGNED), 0) AS bhk_num
+WITH normalized AS (
+  -- use robust extraction as above
+  SELECT City,
+         CAST(NULLIF(REPLACE(REGEXP_SUBSTR(BHK_Type, '[0-9]+(\\.[0-9]+)?'), ',', '.'), '') AS DECIMAL(6,1)) AS bhk_num,
+         BHK_Type
   FROM clean_real_estate
-  WHERE City IS NOT NULL AND BHK_Type IS NOT NULL
+  WHERE BHK_Type IS NOT NULL
+),
+agg AS (
+  SELECT City,
+         COUNT(DISTINCT BHK_Type) AS distinct_bhk_labels,
+         COUNT(DISTINCT bhk_num) AS distinct_numeric_bhk,
+         MIN(bhk_num) AS min_bhk,
+         MAX(bhk_num) AS max_bhk
+  FROM normalized
+  GROUP BY City
 )
 SELECT
   City,
-  COUNT(DISTINCT BHK_Type) AS distinct_bhk_labels,
-  COUNT(DISTINCT bhk_num) AS distinct_numeric_bhk,
-  MIN(bhk_num) AS min_bhk,
-  MAX(bhk_num) AS max_bhk,
-  CONCAT(COALESCE(MIN(bhk_num),'?'), '-', COALESCE(MAX(bhk_num),'?')) AS numeric_range,
+  distinct_bhk_labels,
+  distinct_numeric_bhk,
+  -- if integer, show without decimals, else show as-is (string)
+  IF(min_bhk = FLOOR(min_bhk), CAST(FLOOR(min_bhk) AS CHAR), CAST(min_bhk AS CHAR)) AS min_bhk,
+  IF(max_bhk = FLOOR(max_bhk), CAST(FLOOR(max_bhk) AS CHAR), CAST(max_bhk AS CHAR)) AS max_bhk,
+  CONCAT(
+    IF(min_bhk = FLOOR(min_bhk), CAST(FLOOR(min_bhk) AS CHAR), CAST(min_bhk AS CHAR)),
+    '-',
+    IF(max_bhk = FLOOR(max_bhk), CAST(FLOOR(max_bhk) AS CHAR), CAST(max_bhk AS CHAR))
+  ) AS numeric_range,
   CASE
-    WHEN COUNT(DISTINCT BHK_Type) >= 6 THEN 'wide'
-    WHEN COUNT(DISTINCT BHK_Type) >= 3 THEN 'moderate'
+    WHEN distinct_bhk_labels >= 6 THEN 'wide'
+    WHEN distinct_bhk_labels >= 3 THEN 'moderate'
     ELSE 'narrow'
   END AS spectrum_band
-FROM bhk_extracted
-GROUP BY City
+FROM agg
 ORDER BY City;
