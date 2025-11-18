@@ -29,7 +29,16 @@ medians AS (
   SELECT
     City,
     Locality,
-    MAX(CASE WHEN rn = FLOOR((cnt+1)/2) THEN Price_per_SQFT END) AS median_ppsf,
+    CASE
+       WHEN COUNT(*) % 2 = 1 THEN 
+          MAX(CASE WHEN rn = (cnt+1)/2 THEN Price_per_SQFT END)
+    ELSE 
+        (
+          MAX(CASE WHEN rn = (cnt/2) THEN Price_per_SQFT END)
+          +
+          MAX(CASE WHEN rn = (cnt/2)+1 THEN Price_per_SQFT END)
+        ) / 2
+    END AS median_ppsf,
     MAX(avg_ppsf) AS avg_ppsf,
     MAX(sd_ppsf) AS sd_ppsf,
     MAX(min_ppsf) AS min_ppsf,
