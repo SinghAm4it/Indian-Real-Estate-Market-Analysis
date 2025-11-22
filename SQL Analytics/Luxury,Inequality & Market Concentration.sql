@@ -145,18 +145,70 @@ city_variance AS (
     VAR_POP(Price_per_SQFT) AS total_var
   FROM city_data
   GROUP BY City
+),
+ineq as(
+	SELECT
+	  g.City,
+	  ROUND(g.gini_coeff,4) AS gini,
+	  ROUND(t.theil_t,6) AS theil_t,
+	  ROUND(a.atkinson_eps_0_5,6) AS atkinson_eps_0_5,
+	  ROUND(cv.total_var,6) AS total_variance
+	FROM gini_final g
+	LEFT JOIN theil_final t ON t.City = g.City
+	LEFT JOIN atkinson_final a ON a.City = g.City
+	LEFT JOIN city_variance cv ON cv.City = g.City
+	ORDER BY g.gini_coeff DESC
+),
+stats AS (
+    SELECT
+        MIN(gini)              AS gini_min,
+        MAX(gini)              AS gini_max,
+        MIN(theil_t)           AS theil_min,
+        MAX(theil_t)           AS theil_max,
+        MIN(atkinson_eps_0_5)  AS atk_min,
+        MAX(atkinson_eps_0_5)  AS atk_max,
+        MIN(total_variance)    AS var_min,
+        MAX(total_variance)    AS var_max
+    FROM ineq
+),
+normalized AS (
+    SELECT
+        i.City,
+        i.gini,
+        i.theil_t,
+        i.atkinson_eps_0_5,
+        i.total_variance,
+        (i.gini -  s.gini_min) /
+            NULLIF(s.gini_max - s.gini_min, 0)          AS gini_norm,
+        (i.theil_t - s.theil_min) /
+            NULLIF(s.theil_max - s.theil_min, 0)        AS theil_norm,
+        (i.atkinson_eps_0_5 - s.atk_min) /
+            NULLIF(s.atk_max - s.atk_min, 0)            AS atk_norm,
+        (i.total_variance - s.var_min) /
+            NULLIF(s.var_max - s.var_min, 0)            AS var_norm
+    FROM ineq i
+    CROSS JOIN stats s
 )
 SELECT
-  g.City,
-  ROUND(g.gini_coeff,4) AS gini,
-  ROUND(t.theil_t,6) AS theil_t,
-  ROUND(a.atkinson_eps_0_5,6) AS atkinson_eps_0_5,
-  ROUND(cv.total_var,6) AS total_variance
-FROM gini_final g
-LEFT JOIN theil_final t ON t.City = g.City
-LEFT JOIN atkinson_final a ON a.City = g.City
-LEFT JOIN city_variance cv ON cv.City = g.City
-ORDER BY g.gini_coeff DESC;
+    City,
+    gini,
+    theil_t,
+    atkinson_eps_0_5,
+    total_variance,
+    ROUND(gini_norm, 4)  AS gini_norm,
+    ROUND(theil_norm, 4) AS theil_norm,
+    ROUND(atk_norm, 4)   AS atkinson_norm,
+    ROUND(var_norm, 4)   AS variance_norm,
+    ROUND(
+        100 * (
+              0.30 * gini_norm
+            + 0.25 * theil_norm
+            + 0.25 * atk_norm
+            + 0.20 * var_norm
+        )
+    , 2) AS inequality_score_100
+FROM normalized
+ORDER BY inequality_score_100 DESC;
 
 /* ---------------------------------------------------------------------------
    4) Property-type Entropy (Shannon)
