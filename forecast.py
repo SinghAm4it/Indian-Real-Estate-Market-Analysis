@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 
 # ---------------------------------------------------------
-input_file = "C:/Users/cw/Downloads/Real Estate/clean_real_estate_with_cagr.csv"
-output_file = "C:/Users/cw/Downloads/Real Estate/clean_real_estate_forecast.csv"
+input_file = input("Enter input path: ")
+output_file = input("Enter output path: ")
 # ---------------------------------------------------------
 
 # Load data
@@ -35,3 +35,4 @@ df["Price_per_SQFT_plus_3yr"] = (df[price_col] * (1 + df["chosen_cagr"])**3).rou
 
 # Save output
 df.to_csv(output_file, index=False)
+
