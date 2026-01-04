@@ -1,4 +1,4 @@
-# 🏙️ Real Estate Market Analytics & Pricing Intelligence
+# 🏙️ Real Estate Market Analytics
 
 ## 📌 Project Overview
 This project is an **end-to-end real estate data analytics system** built using **advanced SQL analytics and forecasting techniques** to understand:
