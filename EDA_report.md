@@ -26,8 +26,6 @@ The goal of EDA was to:
 - Recomputed `Price_per_SQFT` using:
 (Price_in_Cr × 10,000,000) / Total_Area
 
-yaml
-Copy code
 - Flagged large mismatches for anomaly analysis
 
 ---
