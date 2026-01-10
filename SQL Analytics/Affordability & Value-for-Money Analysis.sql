@@ -53,7 +53,7 @@ WITH bhk_stats AS (
     City,
     BHK_Type,
     COUNT(*) AS listings,
-    AVG(Total_Area / NULLIF(Price_in_Cr*100,0)) AS avg_sqft_per_crore,
+    AVG(Total_Area / NULLIF(Price_in_Cr,0)) AS avg_sqft_per_crore,
     AVG(Price_per_SQFT) AS avg_ppsf
   FROM clean_real_estate
   WHERE City IS NOT NULL AND BHK_Type IS NOT NULL AND Price_in_Cr IS NOT NULL AND Total_Area IS NOT NULL
@@ -77,7 +77,7 @@ WITH bhk_eff AS (
   SELECT
     City,
     BHK_Type,
-    AVG(Total_Area / NULLIF(Price_in_Cr*100,0)) AS avg_sqft_per_crore,
+    AVG(Total_Area / NULLIF(Price_in_Cr,0)) AS avg_sqft_per_crore,
     COUNT(*) AS n
   FROM clean_real_estate
   WHERE City IS NOT NULL AND BHK_Type IS NOT NULL AND Price_in_Cr IS NOT NULL AND Total_Area IS NOT NULL
@@ -111,10 +111,11 @@ WITH config_stats AS (
     CONCAT(Property_Type,' | ', BHK_Type) AS config,
     COUNT(*) AS listings,
     AVG(Price_per_SQFT) AS avg_ppsf,
-    AVG(Total_Area / NULLIF(Price_in_Cr*100,0)) AS avg_sqft_per_cr
+    AVG(Total_Area / NULLIF(Price_in_Cr,0)) AS avg_sqft_per_cr
   FROM clean_real_estate
   WHERE City IS NOT NULL AND Property_Type IS NOT NULL AND BHK_Type IS NOT NULL AND Price_per_SQFT IS NOT NULL
   GROUP BY City, config
+  HAVING COUNT(*) >= 10
 ),
 ranked AS (
   SELECT
@@ -175,7 +176,7 @@ WITH locality_afford AS (
   SELECT
     City,
     Locality,
-    AVG(Total_Area / NULLIF(Price_in_Cr*100,0)) AS avg_sqft_per_cr,
+    AVG(Total_Area / NULLIF(Price_in_Cr,0)) AS avg_sqft_per_cr,
     COUNT(*) AS listings
   FROM clean_real_estate
   WHERE City IS NOT NULL AND Locality IS NOT NULL AND Total_Area IS NOT NULL AND Price_in_Cr IS NOT NULL
