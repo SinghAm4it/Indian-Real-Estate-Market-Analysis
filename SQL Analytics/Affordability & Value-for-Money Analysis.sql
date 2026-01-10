@@ -13,7 +13,7 @@
 WITH sqft_per_cr AS (
   SELECT
     City,
-    (Total_Area / NULLIF(Price_in_Cr * 100, 0)) AS sqft_per_cr
+    (Total_Area / NULLIF(Price_in_Cr, 0)) AS sqft_per_cr
   FROM clean_real_estate
   WHERE City IS NOT NULL
     AND Total_Area IS NOT NULL
